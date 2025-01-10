@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="glass-effect rounded-lg shadow-lg p-6 border border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-terminal text-indigo-600"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Service Logs</h1>
+                        <p class="text-gray-600">{{ project.name }} - {{ project.service_name }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleAutoRefresh()" id="refresh-toggle" 
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                    <i class="fas fa-sync-alt mr-2"></i> Auto-refresh
+                </button>
+                <a href="{{ url_for('project_details', project_id=project.id) }}"
+                   class="gradient-border inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Project
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Controls -->
+    <div class="flex items-center space-x-4 bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+        <div class="relative flex-grow">
+            <input type="text" id="log-search" placeholder="Search logs..." 
+                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent sm:text-sm">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+            </div>
+        </div>
+        <button onclick="clearSearch()" 
+                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Clear
+        </button>
+        <div class="flex items-center space-x-2">
+            <label class="text-sm text-gray-600">Log Level:</label>
+            <select id="log-level" onchange="filterLogs()" 
+                    class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <option value="all">All</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="error">Error</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Logs Display -->
+    <div class="bg-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+        <div class="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-400">
+                    <i class="fas fa-clock mr-2"></i> Auto-updating every 30 seconds
+                </span>
+                <div id="log-stats" class="text-sm text-gray-400">
+                    <i class="fas fa-list mr-2"></i> <span id="log-count">0</span> lines
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="copyLogs()" 
+                        class="inline-flex items-center px-3 py-1 border border-gray-600 rounded-md text-sm text-gray-300 hover:bg-gray-700 transition-colors duration-200">
+                    <i class="fas fa-copy mr-2"></i> Copy
+                </button>
+                <button onclick="downloadLogs()" 
+                        class="inline-flex items-center px-3 py-1 border border-gray-600 rounded-md text-sm text-gray-300 hover:bg-gray-700 transition-colors duration-200">
+                    <i class="fas fa-download mr-2"></i> Download
+                </button>
+            </div>
+        </div>
+        <div id="log-container" class="p-4 font-mono text-sm overflow-auto" style="max-height: 600px;">
+            <div id="logs" class="space-y-1">
+                {% for line in logs.split('\n') %}
+                <div class="log-line text-gray-300 hover:bg-gray-800 px-2 py-1 rounded">
+                    {{ line }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let autoRefreshEnabled = true;
+let refreshInterval;
+
+function toggleAutoRefresh() {
+    autoRefreshEnabled = !autoRefreshEnabled;
+    const button = document.getElementById('refresh-toggle');
+    const icon = button.querySelector('i');
+    
+    if (autoRefreshEnabled) {
+        button.classList.add('text-indigo-600');
+        icon.classList.add('fa-spin');
+        refreshInterval = setInterval(() => location.reload(), 30000);
+    } else {
+        button.classList.remove('text-indigo-600');
+        icon.classList.remove('fa-spin');
+        clearInterval(refreshInterval);
+    }
+}
+
+function filterLogs() {
+    const level = document.getElementById('log-level').value;
+    const searchText = document.getElementById('log-search').value.toLowerCase();
+    const logLines = document.querySelectorAll('.log-line');
+    let visibleCount = 0;
+
+    logLines.forEach(line => {
+        const text = line.textContent.toLowerCase();
+        const matchesSearch = searchText === '' || text.includes(searchText);
+        const matchesLevel = level === 'all' || 
+                           (level === 'error' && text.includes('error')) ||
+                           (level === 'warning' && text.includes('warning')) ||
+                           (level === 'info' && text.includes('info'));
+
+        if (matchesSearch && matchesLevel) {
+            line.style.display = '';
+            visibleCount++;
+        } else {
+            line.style.display = 'none';
+        }
+    });
+
+    document.getElementById('log-count').textContent = visibleCount;
+}
+
+function clearSearch() {
+    document.getElementById('log-search').value = '';
+    document.getElementById('log-level').value = 'all';
+    filterLogs();
+}
+
+function copyLogs() {
+    const logText = Array.from(document.querySelectorAll('.log-line'))
+        .filter(line => line.style.display !== 'none')
+        .map(line => line.textContent.trim())
+        .join('\n');
+    
+    navigator.clipboard.writeText(logText).then(() => {
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
+        setTimeout(() => {
+            button.innerHTML = originalText;
+        }, 2000);
+    });
+}
+
+function downloadLogs() {
+    const logText = Array.from(document.querySelectorAll('.log-line'))
+        .filter(line => line.style.display !== 'none')
+        .map(line => line.textContent.trim())
+        .join('\n');
+    
+    const blob = new Blob([logText], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${new Date().toISOString()}_service_logs.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('log-search');
+    searchInput.addEventListener('input', filterLogs);
+    
+    // Start auto-refresh
+    toggleAutoRefresh();
+    
+    // Calculate initial log count
+    document.getElementById('log-count').textContent = document.querySelectorAll('.log-line').length;
+    
+    // Add syntax highlighting
+    document.querySelectorAll('.log-line').forEach(line => {
+        const text = line.textContent;
+        if (text.toLowerCase().includes('error')) {
+            line.classList.add('text-red-400');
+        } else if (text.toLowerCase().includes('warning')) {
+            line.classList.add('text-yellow-400');
+        } else if (text.toLowerCase().includes('info')) {
+            line.classList.add('text-blue-400');
+        }
+    });
+});
+</script>
+{% endblock %}

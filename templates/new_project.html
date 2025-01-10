@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="glass-effect rounded-lg shadow-lg p-6 border border-gray-200">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <i class="fas fa-plus text-indigo-600"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">New Project</h1>
+                    <p class="text-gray-600">Create a new deployment project</p>
+                </div>
+            </div>
+            <a href="{{ url_for('index') }}"
+               class="gradient-border inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-200">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Projects
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+        <form method="POST" action="{{ url_for('new_project') }}" enctype="multipart/form-data" class="space-y-8 p-6">
+            <!-- Project Details Section -->
+            <div class="space-y-6">
+                <div class="text-lg font-medium text-gray-900 pb-4 border-b border-gray-200">
+                    <i class="fas fa-info-circle mr-2 text-indigo-600"></i> Project Details
+                </div>
+                
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Project Name</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-project-diagram text-gray-400"></i>
+                            </div>
+                            <input type="text" name="name" id="name" required
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent sm:text-sm"
+                                   placeholder="My Awesome Project">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="service_name" class="block text-sm font-medium text-gray-700">Service Name</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-cog text-gray-400"></i>
+                            </div>
+                            <input type="text" name="service_name" id="service_name" required
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent sm:text-sm"
+                                   placeholder="myapp.service">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deployment Configuration Section -->
+            <div class="space-y-6">
+                <div class="text-lg font-medium text-gray-900 pb-4 border-b border-gray-200">
+                    <i class="fas fa-rocket mr-2 text-indigo-600"></i> Deployment Configuration
+                </div>
+
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <label for="server_path" class="block text-sm font-medium text-gray-700">Server Path</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-folder-open text-gray-400"></i>
+                            </div>
+                            <input type="text" name="server_path" id="server_path" required
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent sm:text-sm"
+                                   placeholder="/var/www/myapp">
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">Absolute path where the project will be deployed on the server</p>
+                    </div>
+
+                    <div>
+                        <label for="git_url" class="block text-sm font-medium text-gray-700">Git Repository URL (Optional)</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fab fa-git-alt text-gray-400"></i>
+                            </div>
+                            <input type="text" name="git_url" id="git_url"
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent sm:text-sm"
+                                   placeholder="https://github.com/username/repo.git">
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">If provided, deployments will be made from this Git repository</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Environment Variables Section -->
+            <div class="space-y-6">
+                <div class="text-lg font-medium text-gray-900 pb-4 border-b border-gray-200">
+                    <i class="fas fa-key mr-2 text-indigo-600"></i> Environment Variables
+                </div>
+
+                <div id="env-vars" class="space-y-4">
+                    <div class="env-var-group">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Key</label>
+                                <input type="text" name="env_keys[]"
+                                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                       placeholder="VARIABLE_NAME">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Value</label>
+                                <input type="text" name="env_values[]"
+                                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                       placeholder="variable_value">
+                            </div>
+                            <div class="flex items-end">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" name="env_secret[]" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                    <span class="ml-3 text-sm font-medium text-gray-700">Secret</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="addEnvVar()"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-plus mr-2"></i> Add Environment Variable
+                </button>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4">
+                <button type="submit"
+                        class="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <i class="fas fa-save mr-2"></i> Create Project
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function addEnvVar() {
+    const container = document.getElementById('env-vars');
+    const newGroup = document.createElement('div');
+    newGroup.className = 'env-var-group';
+    newGroup.innerHTML = `
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Key</label>
+                <input type="text" name="env_keys[]"
+                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                       placeholder="VARIABLE_NAME">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Value</label>
+                <input type="text" name="env_values[]"
+                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                       placeholder="variable_value">
+            </div>
+            <div class="flex items-end justify-between">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="env_secret[]" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    <span class="ml-3 text-sm font-medium text-gray-700">Secret</span>
+                </label>
+                <button type="button" onclick="removeEnvVar(this)" class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newGroup);
+}
+
+function removeEnvVar(button) {
+    const group = button.closest('.env-var-group');
+    group.remove();
+}
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const serviceName = document.getElementById('service_name').value.trim();
+    const serverPath = document.getElementById('server_path').value.trim();
+
+    if (!name || !serviceName || !serverPath) {
+        e.preventDefault();
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    // Validate service name format
+    if (!serviceName.endsWith('.service')) {
+        e.preventDefault();
+        alert('Service name must end with .service');
+        return;
+    }
+
+    // Validate server path format
+    if (!serverPath.startsWith('/')) {
+        e.preventDefault();
+        alert('Server path must be an absolute path starting with /');
+        return;
+    }
+
+    // Validate Git URL format if provided
+    const gitUrl = document.getElementById('git_url').value.trim();
+    if (gitUrl && !gitUrl.match(/^https?:\/\/.*\.git$/)) {
+        e.preventDefault();
+        alert('Git URL must be a valid HTTPS URL ending with .git');
+        return;
+    }
+});
+</script>
+{% endblock %}
